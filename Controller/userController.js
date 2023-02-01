@@ -53,6 +53,23 @@ const createUser = async (req, res, next) => {
 
 //Create User function:
 
+//Get All Users Function:
+const getAllUsers = async (req, res, next) => {
+    await db.query('SELECT * from User').then((result) => {
+        const { email, firstName, lastName } = result;
+        if (!result) {
+            throw new Error('Empty Database!');
+        }
+        else {
+            //Do not return password:
+            res.status(200).json(result);
+        }
+    }).catch((error) => {
+        console.log(error);
+    });
+}
+//Get All Users Function:
+
 
 //Get Users Function:
 const getUsers = async (req, res, next) => {
@@ -131,4 +148,5 @@ module.exports = {
     getUsers,
     deleteUser,
     updateUser,
+    getAllUsers
 }
