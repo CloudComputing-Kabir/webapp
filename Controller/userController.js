@@ -17,9 +17,7 @@ const createUser = async (req, res, next) => {
 
     // Check if the email exists
     const emailAddrress = email.toLowerCase();
-    console.log(emailAddrress)
     const [result] = await db.query(`SELECT * FROM User where email = ?`, [emailAddrress]);
-    console.log("Result:", result);
     if (result.length === 0) {
         // Generate salt for hashing:
         bcrypt.genSalt(10, (err, salt) => {
@@ -38,7 +36,6 @@ const createUser = async (req, res, next) => {
                 // Insert the user into the database
                 db.execute('INSERT INTO User (email, password, firstName, lastName) VALUES (?, ?, ?, ?)', [emailAddrress, hashedPassword, firstName, lastName])
                     .then((result) => {
-                        console.log(result);
                         res.status(201).send("User Created!");
                     })
                     .catch((error) => {
@@ -56,7 +53,7 @@ const createUser = async (req, res, next) => {
 //Get All Users Function:
 const getAllUsers = async (req, res, next) => {
     await db.query('SELECT * from User').then((result) => {
-        const { email, firstName, lastName } = result;
+        // const { email, firstName, lastName } = result;
         if (!result) {
             throw new Error('Empty Database!');
         }
@@ -123,7 +120,6 @@ const deleteUser = (req, res, next) => {
 //Update is working, add remaining checks and functionalities in the code:
 const updateUser = (req, res, next) => {
     const { userId } = req.params;
-    console.log(userId);
     //Take user input to update the fields:
     const { email } = req.body
     //Check if email is null:
