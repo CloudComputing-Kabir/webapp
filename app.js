@@ -6,12 +6,15 @@ const bodyParser = require('body-parser');
 //Internal File Imports:
 const userRoutes = require('./Routes/userRoutes');
 const db = require('./Util/database');
+
 //Internal File Imports:
+
 
 
 const app = express();
 
 app.use(bodyParser.json());
+
 
 app.use(bodyParser.urlencoded({
     extended: false
