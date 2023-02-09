@@ -388,7 +388,7 @@ const productUpdatePatch = async (req, res, next) => {
         console.log(error);
     }
 
-    if (NEWSKU.productId !== exisitingProduct.productId) {
+    if (NEWSKU !== null && NEWSKU.productId !== exisitingProduct.productId) {
         return res.status(400).json({ message: "SKU already exists" })
     }
 
