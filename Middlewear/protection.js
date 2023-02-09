@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const database = require("../Util/database");
+const User = require("../Models/user");
 
 const protectRoute = async (req, res, next) => {
     if (!req.headers.authorization) {
@@ -9,15 +9,19 @@ const protectRoute = async (req, res, next) => {
     const decodedAuth = Buffer.from(encodedAuth, "base64").toString();
     const [username, passwordFromAuth] = decodedAuth.split(":");
     const { userId } = req.params;
-    const [rows] = await database.query(
-        "SELECT email, password FROM User WHERE id = ?",
-        [userId]
-    );
-    const { username: dbUsername, password: dbPassword } = rows[0];
-    if (dbUsername !== username) {
+
+    const USERID = await User.findOne({
+        where: {
+            id: userId
+        }
+    })
+
+    const { username: userName, password: password } = USERID;
+
+    if (userName !== username) {
         return res.status(403).json({ msg: "Username does not match." });
     }
-    if (!(await bcrypt.compare(passwordFromAuth, dbPassword))) {
+    if (!(await bcrypt.compare(passwordFromAuth, password))) {
         return res.status(403).json({ msg: "Password does not match" });
     }
     next();
