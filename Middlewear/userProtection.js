@@ -1,23 +1,23 @@
 const bcrypt = require("bcryptjs");
 const User = require("../Models/user");
 
-const protectRoute = async (req, res, next) => {
+const userProtection = async (req, res, next) => {
     if (!req.headers.authorization) {
         return res.status(401).json("Authorisation is missing!");
     }
     const [, encodedAuth] = req.headers.authorization.split(" ");
     const decodedAuth = Buffer.from(encodedAuth, "base64").toString();
     const [username, passwordFromAuth] = decodedAuth.split(":");
+    const { userId } = req.params;
 
-    console.log("Username from protection:", username);
 
     const USERID = await User.findOne({
         where: {
-            username: username
+            id: userId
         }
     })
 
-    req.USER_KI_ID = USERID.id;
+    // req.USER_KI_ID = USERID.id;
 
     const { username: userName, password: password } = USERID;
 
@@ -29,4 +29,4 @@ const protectRoute = async (req, res, next) => {
     }
     next();
 };
-module.exports = protectRoute;
+module.exports = userProtection;

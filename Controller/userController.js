@@ -65,7 +65,7 @@ const userGetAccount = async (req, res, next) => {
     const { userId } = req.params;
     let getUser;
     try {
-        getUser = await User.findOne({
+        getUser = await User.findAll({
             where: {
                 id: userId
             }
@@ -74,11 +74,18 @@ const userGetAccount = async (req, res, next) => {
     catch (error) {
         console.log(error);
     }
+    const { id, first_name, last_name, username, createdAt, updatedAt } = getUser[0];
+
+
     if (!getUser) {
         return res.status(400).json({ message: "No user found" });
     }
     else {
-        return res.status(200).json({ message: `User with id:${userId} found`, user: getUser })
+        return res.status(200).json({
+            message: `User with id:${userId} found`,
+            user: { id, first_name, last_name, username, createdAt, updatedAt }
+        });
+
     }
 }
 //Get a single user:
@@ -137,17 +144,30 @@ const userUpdate = async (req, res, next) => {
         throw new Error("Invalid User, cant update details");
     }
     else {
-        await User.update({
-            first_name: first_name, last_name: last_name, password: password, updatedAt: new Date()
-        }, {
-            where: {
-                id: userId
+        bcrypt.genSalt(10, (err, salt) => {
+            if (err) {
+                console.log(err);
+                return;
             }
-        })
-            .then((result) => {
-                return res.status(201).json({ message: "User Updated sucessfully", result: result })
-            })
-            .catch(err => console.log(err));
+            // Hash the password:
+            bcrypt.hash(password, salt, (err, hashedPassword) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                User.update({
+                    first_name: first_name, last_name: last_name, password: hashedPassword, updatedAt: new Date()
+                }, {
+                    where: {
+                        id: userId
+                    }
+                })
+                    .then((result) => {
+                        return res.status(201).json({ message: "User Updated sucessfully", result: result })
+                    })
+                    .catch(err => console.log(err));
+            });
+        });
     }
 }
 //Update User:
@@ -249,8 +269,10 @@ const deleteProduct = async (req, res, next) => {
 
 //Test Create Product:
 const createProduct = async (req, res, next) => {
-    const { userId } = req.params;
+    // const { userId } = req.params;
     const { name, description, sku, maufacturer, quantity } = req.body;
+    const USER_ID = req.USER_KI_ID;
+    console.log("USERKI ID FROM CREATE PRODUCT CONTROLLER:", USER_ID);
 
     try {
         if (!name || !description || !sku || !maufacturer || !quantity) {
@@ -274,7 +296,7 @@ const createProduct = async (req, res, next) => {
             sku,
             maufacturer,
             quantity,
-            owner_user_id: userId,
+            owner_user_id: USER_ID,
         });
 
         return res.status(201).json({ message: "Product created", result: newProduct });
@@ -288,6 +310,8 @@ const createProduct = async (req, res, next) => {
 //Sequelize Update Product - PUT METHOD:
 const productUpdate = async (req, res, next) => {
     const { name, description, sku, maufacturer, quantity } = req.body;
+    const OWNER_ID = req.OWNERID;
+    console.log("OWNERID FROM USERCONTROLLER:", OWNER_ID);
     const { prodId, userId } = req.params;
     if (!name || !description || !sku || !maufacturer || !quantity) {
         return res.status(400).send("Please fill all the fields to update a product.");
@@ -295,7 +319,7 @@ const productUpdate = async (req, res, next) => {
     let product;
     let existingProduct;
     try {
-        product = await Product.findAll({ where: { productId: prodId, owner_user_id: userId } });
+        product = await Product.findAll({ where: { productId: prodId, owner_user_id: OWNER_ID } });
     } catch (error) {
         console.log(error);
     }
@@ -336,7 +360,7 @@ const productUpdate = async (req, res, next) => {
     }
     else {
         try {
-            await Product.update({ name, description, sku, maufacturer, quantity }, { where: { productId: prodId, owner_user_id: userId } })
+            await Product.update({ name, description, sku, maufacturer, quantity }, { where: { productId: prodId, owner_user_id: OWNER_ID } })
                 .then(result => {
                     console.log(result);
                     return res.status(201).json({ message: "Product Updated" });
@@ -354,8 +378,9 @@ const productUpdate = async (req, res, next) => {
 
 const productUpdatePatch = async (req, res, next) => {
     const { name, description, sku, maufacturer, quantity } = req.body;
-    console.log("Result:", typeof (name));
-    const { prodId, userId } = req.params;
+    const { prodId } = req.params;
+    const OWNERID = req.OWNERID;
+    console.log("USERID FROM PATCH UPDATE:", OWNERID)
 
     let exisitingProduct;
 
@@ -371,10 +396,6 @@ const productUpdatePatch = async (req, res, next) => {
     }
 
 
-
-
-    console.log("Exisiting product", exisitingProduct);
-    console.log("Object of exisiting produt", exisitingProduct.name, exisitingProduct.description, exisitingProduct.sku, exisitingProduct.maufacturer, exisitingProduct.quantity);
 
     let NEWSKU;
     try {
@@ -404,7 +425,7 @@ const productUpdatePatch = async (req, res, next) => {
         }, {
             where: {
                 productId: prodId,
-                owner_user_id: userId
+                owner_user_id: OWNERID
             }
         });
     }
@@ -426,12 +447,14 @@ const productUpdatePatch = async (req, res, next) => {
 //Delete Test:
 const productDelete = async (req, res, next) => {
     const { prodId } = req.params;
+    const OWNERID = req.OWNERID;
+    console.log("OWNERID FROM USERCONTROLLER FOR DELETE:", OWNERID);
     console.log("Product id: ", prodId);
     let deleteProduct;
     try {
         deleteProduct = await Product.findOne({
             where: {
-                productId: prodId
+                productId: prodId, owner_user_id: OWNERID
             }
         })
     }
