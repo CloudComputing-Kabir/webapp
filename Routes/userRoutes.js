@@ -2,7 +2,8 @@ const express = require('express');
 const userController = require('../Controller/userController');
 const protetion = require('../Middlewear/protection');
 const productProtection = require('../Middlewear/productProtection');
-const healthCheck = require('../health')
+const healthCheck = require('../health');
+const userProtection = require('../Middlewear/userProtection');
 
 
 const router = express.Router();
@@ -22,21 +23,19 @@ router.get('/v1/getProducts', userController.getProducts);
 
 
 //Sequelize Product:
-router.post('/v1/product/:userId', userController.createProduct);
-router.put('/v1/product/:prodId/:userId', productProtection, userController.productUpdate);
-router.patch('/v1/product/:prodId/:userId', userController.productUpdatePatch);
+router.post('/v1/product', protetion, userController.createProduct);
+router.put('/v1/product/:prodId', productProtection, userController.productUpdate);
+router.patch('/v1/product/:prodId', productProtection, userController.productUpdatePatch);
 router.delete('/v1/product/:prodId', productProtection, userController.productDelete);
 router.get('/v1/product/getAllProduct', userController.getAllProduct);
-router.get('/v1/product/:prodId', productProtection, userController.getSingleProduct);
+router.get('/v1/product/:prodId', userController.getSingleProduct);
 //Sequelize:
 
 //Sequeslize User:
 router.post('/v1/user', userController.userCreate);
-router.put('/v1/user/:userId', protetion, userController.userUpdate);
-router.get('/v1/user/:userId', protetion, userController.userGetAccount);
+router.put('/v1/user/:userId', userProtection, userController.userUpdate);
+router.get('/v1/user/:userId', userProtection, userController.userGetAccount);
 //Sequeslize User:
-
-
 
 
 module.exports = router;
