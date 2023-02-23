@@ -1,11 +1,11 @@
-packer {
-  required_plugins {
-    amazon = {
-      version = ">= 1.1.1"
-      source  = "github.com/hashicorp/amazon"
-    }
-  }
-}
+# packer {
+#   required_plugins {
+#     amazon = {
+#       version = ">= 1.1.1"
+#       source  = "github.com/hashicorp/amazon"
+#     }
+#   }
+# }
 
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
@@ -39,7 +39,7 @@ variable "amiName" {
 }
 
 source "amazon-ebs" "webapp" {
-  ami_name = "Testt"
+  ami_name = "webapp - ${local.timestamp}"
 
   source_ami_filter {
     filters = {
