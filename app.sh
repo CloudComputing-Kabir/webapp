@@ -17,3 +17,4 @@ sudo pm2 startup systemd
 # pm2 save the list
 sudo pm2 save
 # pm2 list all the running apps
+sudo pm2 list
