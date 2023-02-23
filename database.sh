@@ -35,3 +35,5 @@ expect eof
 ")
 
 echo "$SECURE_MYSQL"
+
+mysql -uroot -p17227860 -e "CREATE DATABASE CloudAssignment1"
