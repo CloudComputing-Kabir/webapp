@@ -48,6 +48,11 @@ variable "AWS_ACCESS_KEY_ID" {
   type    = string
 }
 
+variable "amiUser" {
+  default = ["146721225773"]
+  type    = list(string)
+}
+
 
 
 source "amazon-ebs" "webapp" {
@@ -68,6 +73,7 @@ source "amazon-ebs" "webapp" {
   ssh_username  = "${var.sshUserName}"
   access_key    = "${var.AWS_ACCESS_KEY_ID}"
   secret_key    = "${var.AWS_SECRET_ACCESS_KEY}"
+  ami_user      = "${var.amiUser}"
 
 
   launch_block_device_mappings {
