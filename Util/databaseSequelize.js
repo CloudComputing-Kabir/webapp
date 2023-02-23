@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-const sequelize = new Sequelize('CloudAssignment1', 'root', '17227860', { dialect: 'mysql', host: 'localhost' });
+const sequelize = new Sequelize('CloudAssignment1', 'root', 'Kabir@123', { dialect: 'mysql', host: 'localhost' });
 sequelize
     .authenticate()
     .then(() => {
