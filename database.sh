@@ -18,9 +18,9 @@ spawn mysql_secure_installation
 expect \"Enter password for user root:\"
 send \"$temp_password\r\"
 expect \"New password:\"
-send \"17227860\r\"
+send \"Kabir@123\r\"
 expect \"Re-enter new password:\"
-send \"17227860\r\"
+send \"Kabir@123\r\"
 expect \"Change the password for root ? ((Press y|Y for Yes, any other key for No) :\"
 send \"n\r\"
 expect \"Remove anonymous users? (Press y|Y for Yes, any other key for No) :\"
@@ -36,4 +36,4 @@ expect eof
 
 echo "$SECURE_MYSQL"
 
-mysql -uroot -p17227860 -e "CREATE DATABASE CloudAssignment1"
+mysql -uroot -pKabir@123 -e "CREATE DATABASE CloudAssignment1"
