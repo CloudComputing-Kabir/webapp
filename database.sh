@@ -1,5 +1,7 @@
 #!/bin/bash
+
 #test
+
 
 sudo amazon-linux-extras install epel -y 
 # Installing mysql
@@ -19,9 +21,14 @@ spawn mysql_secure_installation
 expect \"Enter password for user root:\"
 send \"$temp_password\r\"
 expect \"New password:\"
+
 send \"17227860\r\"
 expect \"Re-enter new password:\"
 send \"17227860\r\"
+
+
+expect \"Re-enter new password:\"
+
 expect \"Change the password for root ? ((Press y|Y for Yes, any other key for No) :\"
 send \"n\r\"
 expect \"Remove anonymous users? (Press y|Y for Yes, any other key for No) :\"
