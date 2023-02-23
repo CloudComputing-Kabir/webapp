@@ -11,9 +11,9 @@ npm install
 npm ci
 
 echo "---------------hosting up the app - PM2 config----------------"
+sudo pm2 start npm --name "csye6225-webapp" -- run "start"
 # start app using pm2
-npsudo pm2 startup systemd
+sudo pm2 startup systemd
 # pm2 save the list
 sudo pm2 save
 # pm2 list all the running apps
-sudo pm2 list
