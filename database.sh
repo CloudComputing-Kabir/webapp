@@ -1,4 +1,5 @@
 #!/bin/bash
+#test
 
 sudo amazon-linux-extras install epel -y 
 # Installing mysql
