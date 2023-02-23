@@ -38,6 +38,18 @@ variable "amiName" {
   type    = string
 }
 
+variable "AWS_SECRET_ACCESS_KEY" {
+  default = "${env("AWS_SECRET_ACCESS_KEY")}"
+  type    = string
+}
+
+variable "AWS_ACCESS_KEY_ID" {
+  default = "${env("AWS_ACCESS_KEY_ID")}"
+  type    = string
+}
+
+
+
 source "amazon-ebs" "webapp" {
   ami_name = "webapp - ${local.timestamp}"
 
@@ -54,6 +66,9 @@ source "amazon-ebs" "webapp" {
   instance_type = "${var.instanceType}"
   region        = "${var.region}"
   ssh_username  = "${var.sshUserName}"
+  access_key    = "${var.AWS_ACCESS_KEY_ID}"
+  secret_key    = "${var.AWS_SECRET_ACCESS_KEY}"
+
 
   launch_block_device_mappings {
     device_name           = "/dev/xvda"
