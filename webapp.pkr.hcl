@@ -31,7 +31,7 @@ variable "sshUserName" {
 variable "profile" {
   default = "dev"
   type    = string
-}
+
 
 variable "amiName" {
   default = "web-app"
