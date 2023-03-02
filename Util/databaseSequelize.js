@@ -1,5 +1,8 @@
 const Sequelize = require('sequelize');
-const sequelize = new Sequelize('CloudAssignment1', 'root', 'Kabir@123', { dialect: 'mysql', host: 'localhost' });
+const dotenv = require('dotenv');
+dotenv.config();
+
+const sequelize = new Sequelize(process.env.DB_DNAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, { dialect: 'mysql', host: process.env.DB_HOSTNAME });
 sequelize
     .authenticate()
     .then(() => {
