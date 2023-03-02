@@ -3,12 +3,17 @@ const db = require('../Util/database');
 const bcrypt = require('bcrypt');
 const Product = require('../Models/product');
 const User = require('../Models/user');
+const Image = require('../Models/image');
 const sequelize = require('../Util/databaseSequelize');
-const { get } = require('../Routes/userRoutes');
+const { get, all, param } = require('../Routes/userRoutes');
+const crypto = require('crypto');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const dotenv = require('dotenv');
+dotenv.config();
 
 
-//TODO:
-//->Refactor User using Sequelize.
+
+const randomImageName = (bytes = 6) => crypto.randomBytes(bytes).toString('hex');
 
 //Start of User Routes:
 
@@ -521,6 +526,193 @@ const getSingleProduct = async (req, res, next) => {
 
 //***************************** */
 
+
+// Image Routes Start ***************************** Image Routes Start */
+
+const uploadDocument = async (req, res, next) => {
+    const { productId } = req.params;
+    const { fileName, s3_bucketPath } = req.body;
+    const imageName = req.file;
+    const mimeType = req.file.mimetype;
+    console.log("Image URL: ", imageName)
+    console.log("Content-type or the mimetype:", mimeType);
+
+    const bucketName = process.env.BUCKET_NAME;
+    const bucketRegion = process.env.BUCKET_REGION;
+
+
+
+    //Assigning random name to the originalname by using randomName function:
+    const randomName = randomImageName();
+
+    //Create S3 Object:
+
+    const s3 = new S3Client({
+      
+        region: bucketRegion,
+    });
+
+    if (!imageName) {
+        return res.status(404).json({ message: "No image file found" });
+    }
+
+    if (!fileName) {
+        return res.status(400).json({ message: "Please fill or upload required paths" });
+    }
+
+
+    //Putting image into S3:
+
+    const params = {
+        Bucket: bucketName,
+        Key: randomName,
+        Body: req.file.buffer,
+        ContentType: mimeType
+    }
+
+    const command = new PutObjectCommand(params);
+
+    await s3.send(command);
+
+    let uploaded_document
+    try {
+        uploaded_document = await Image.create({
+            productId: productId,
+            fileName: imageName.originalname,
+            s3_bucketPath: randomName,
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+    try {
+        if (!uploaded_document) {
+            return res.status(400).json("Failed to upload document");
+        }
+        else {
+            return res.status(200).json({ message: "Uploaded the document sucessfully", document: uploaded_document });
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+
+const getAllDocuments = async (req, res, next) => {
+    // const { productId } = req.params
+
+    let allDocument;
+    try {
+        allDocument = await Image.findAll();
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+    if (!allDocument) {
+        return res.status(404).json({ message: "No documents found!" });
+    }
+    else {
+        return res.status(200).json({ mesage: "Documents found", listOfAllDocuments: allDocument });
+    }
+}
+
+const getSingleDocument = async (req, res, next) => {
+    const { productId, imageId } = req.params;
+    if (!productId && !imageId) {
+        return res.status(400).json({ message: "Parameters not pased properly" });
+    }
+
+    let singleDocument;
+
+    try {
+        singleDocument = await Image.findOne({
+            where: {
+                productId: productId,
+                imageId: imageId
+            }
+        })
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+    if (!singleDocument) {
+        return res.status(400).json({ message: "No document found" });
+    }
+    else {
+        return res.status(200).json({ message: "Document found", document: singleDocument });
+    }
+
+}
+
+const deleteDocument = async (req, res, next) => {
+    const { productId, imageId } = req.params;
+
+    const bucketName = process.env.BUCKET_NAME;
+    const bucketRegion = process.env.BUCKET_REGION;
+    const accessKey = process.env.ACCESS_KEY;
+    const secretKey = process.env.SECRET_KEY;
+
+    const s3 = new S3Client({
+        credentials: {
+            accessKeyId: accessKey,
+            secretAccessKey: secretKey,
+        },
+        region: bucketRegion,
+    });
+
+    let deleteImageName;
+    //Find id of image from database and store it in a variable:
+    try {
+        deleteImageName = await Image.findOne({
+            where: {
+                imageId: imageId
+            }
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+
+    //If image is not present, give a response:
+    if (!deleteImageName) {
+        return res.status(404).json({ message: "Couldnt find image" });
+    }
+    else {
+        const s3BucketPath = deleteImageName.s3_bucketPath;
+        const params = {
+            Bucket: bucketName,
+            Key: s3BucketPath,
+        }
+        const command = new DeleteObjectCommand(params);
+        await s3.send(command);
+    }
+
+    let imageDeletedSucessfully;
+    //Delete Image from database:
+    try {
+        imageDeletedSucessfully = await Image.destroy({
+            where: {
+                imageId: imageId
+            }
+        });
+        return res.status(204).json({ message: "Image deleted sucessfully!" });
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+
+
+}
+
+// Image Routes End ***************************** Image Routes End */
+
+
 module.exports = {
     getUsers,
     getAllUsers,
@@ -536,5 +728,9 @@ module.exports = {
     userCreate,
     userUpdate,
     userGetAccount,
-    productUpdatePatch
+    productUpdatePatch,
+    uploadDocument,
+    getAllDocuments,
+    getSingleDocument,
+    deleteDocument
 }
