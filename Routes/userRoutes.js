@@ -5,6 +5,7 @@ const productProtection = require('../Middlewear/productProtection');
 const healthCheck = require('../health');
 const userProtection = require('../Middlewear/userProtection');
 const multer = require('multer');
+const documentProtection = require('../Middlewear/documentProtection');
 
 //Functions for Multer storage and filtering process //
 const fileStorage = multer.memoryStorage();
@@ -52,10 +53,10 @@ router.get('/v1/user/:userId', userProtection, userController.userGetAccount);
 //Sequeslize User:
 
 //Sequelize Image:
-router.post('/v1/product/:productId/image', multer({ storage: fileStorage, fileFilter: filteredFile }).single('s3_bucketPath'), userController.uploadDocument);
-router.get('/v1/product/:productId/image', userController.getAllDocuments);
-router.get('/v1/product/:productId/image/:imageId', userController.getSingleDocument);
-router.delete('/v1/product/:productId/image/:imageId', userController.deleteDocument);
+router.post('/v1/product/:productId/image', documentProtection, multer({ storage: fileStorage, fileFilter: filteredFile }).single('s3_bucketPath'), userController.uploadDocument);
+router.get('/v1/product/:productId/image', documentProtection, userController.getAllDocuments);
+router.get('/v1/product/:productId/image/:imageId', documentProtection, userController.getSingleDocument);
+router.delete('/v1/product/:productId/image/:imageId', documentProtection, userController.deleteDocument);
 //Sequelize Image:
 
 
