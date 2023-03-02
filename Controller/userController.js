@@ -537,8 +537,8 @@ const uploadDocument = async (req, res, next) => {
     console.log("Image URL: ", imageName)
     console.log("Content-type or the mimetype:", mimeType);
 
-    const bucketName = process.env.BUCKET_NAME;
-    const bucketRegion = process.env.BUCKET_REGION;
+    const bucketName = process.env.S3_BUCKETNAME;
+    const bucketRegion = process.env.S3_BUCKETREGION;
 
 
 
@@ -548,7 +548,6 @@ const uploadDocument = async (req, res, next) => {
     //Create S3 Object:
 
     const s3 = new S3Client({
-      
         region: bucketRegion,
     });
 
@@ -651,16 +650,11 @@ const getSingleDocument = async (req, res, next) => {
 const deleteDocument = async (req, res, next) => {
     const { productId, imageId } = req.params;
 
-    const bucketName = process.env.BUCKET_NAME;
-    const bucketRegion = process.env.BUCKET_REGION;
-    const accessKey = process.env.ACCESS_KEY;
-    const secretKey = process.env.SECRET_KEY;
+    const bucketName = process.env.S3_BUCKETNAME;
+    const bucketRegion = process.env.S3_BUCKETREGION;
+    
 
     const s3 = new S3Client({
-        credentials: {
-            accessKeyId: accessKey,
-            secretAccessKey: secretKey,
-        },
         region: bucketRegion,
     });
 
