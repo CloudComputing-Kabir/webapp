@@ -7,7 +7,7 @@ cd ./webapp || exit
 
 echo "---------------installing app dependencies - NPM----------------"
 # install all the dependencies
-npm install
+#npm install
 npm ci
 
 echo "---------------hosting up the app - PM2 config----------------"
