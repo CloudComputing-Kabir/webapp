@@ -17,7 +17,7 @@ sql
 
 Copy code
 npm start
-4. Open your web browser and navigate to http://localhost:3000/ to access the application.
+4. Open your web browser and navigate to http://localhost:2000/ to access the application.
 
 Use:
 This is a webapplication where you can create a user, update and delete.
