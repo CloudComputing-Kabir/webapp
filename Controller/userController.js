@@ -10,17 +10,26 @@ const crypto = require('crypto');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const dotenv = require('dotenv');
 dotenv.config();
+const statsdClient = require('../Util/StatsD');
+const { errorLogger, infoLogger } = require('../Util/Winston');
+
 
 
 
 const randomImageName = (bytes = 6) => crypto.randomBytes(bytes).toString('hex');
+
+const startTime = process.hrtime();
+const endTime = process.hrtime(startTime);
+const responseTime = ((endTime[0] * 1000) + (endTime[1] / 1000000));
 
 //Start of User Routes:
 
 //Create User function:
 const userCreate = async (req, res, next) => {
     const { first_name, last_name, password, username } = req.body;
-
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+    infoLogger.info("Creating a user in the database");
     if (!first_name || !last_name || !username || !password) {
         throw new Error("Please fill all the fields to add a User");
     }
@@ -30,7 +39,7 @@ const userCreate = async (req, res, next) => {
         existingUser = await User.findOne({ where: { username } })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     if (existingUser) {
@@ -39,25 +48,25 @@ const userCreate = async (req, res, next) => {
     else {
         bcrypt.genSalt(10, (err, salt) => {
             if (err) {
-                console.log(err);
+                errorLogger.error(err);
                 return;
             }
 
             // Hash the password:
             bcrypt.hash(password, salt, (err, hashedPassword) => {
                 if (err) {
-                    console.log(err);
+                    errorLogger.error(err);
                     return;
                 }
                 User.create({
                     first_name, last_name, password: hashedPassword, username
                 })
                     .then((result) => {
-                        console.log(result);
+                        // console.log(result);
                         return res.status(201).json({ message: "User Created", result: result });
                     })
                     .catch((err) => {
-                        console.log(err);
+                        errorLogger.error(err);
                     });
             });
         });
@@ -68,6 +77,9 @@ const userCreate = async (req, res, next) => {
 //Get a single user:
 const userGetAccount = async (req, res, next) => {
     const { userId } = req.params;
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+    infoLogger.info("Getting info of user's account");
     let getUser;
     try {
         getUser = await User.findAll({
@@ -77,7 +89,7 @@ const userGetAccount = async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
     const { id, first_name, last_name, username, createdAt, updatedAt } = getUser[0];
 
@@ -97,6 +109,9 @@ const userGetAccount = async (req, res, next) => {
 
 //Get All Users Function:
 const getAllUsers = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+    infoLogger.info("Getting info of all users");
     await db.query('SELECT * from User').then((result) => {
         // const { email, firstName, lastName } = result;
         if (!result) {
@@ -107,7 +122,7 @@ const getAllUsers = async (req, res, next) => {
             res.status(200).json(result);
         }
     }).catch((error) => {
-        console.log(error);
+        errorLogger.error(error);
     });
 }
 //Get All Users Function:
@@ -116,6 +131,9 @@ const getAllUsers = async (req, res, next) => {
 //Get Users Function:
 const getUsers = async (req, res, next) => {
     await db.query('SELECT * from User').then((result) => {
+        statsdClient.increment('my_counter');
+        statsdClient.timing('response_time', responseTime);
+        infoLogger.info('Getting info of the users');
         const { email, firstName, lastName } = result;
         if (!result) {
             throw new Error('Empty Database!');
@@ -125,15 +143,21 @@ const getUsers = async (req, res, next) => {
             res.status(200).json(result);
         }
     }).catch((error) => {
-        console.log(error);
+        errorLogger.error(error);
     });
 }
 //Get Users Function:
 
 //Update User:
 const userUpdate = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
     const { first_name, last_name, password } = req.body;
     const { userId } = req.params;
+
+    infoLogger.info(`Updating the user with id ${userId}`);
+
     let existingUser;
     try {
         existingUser = await User.findOne({
@@ -143,7 +167,7 @@ const userUpdate = async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
     if (!existingUser) {
         throw new Error("Invalid User, cant update details");
@@ -151,13 +175,13 @@ const userUpdate = async (req, res, next) => {
     else {
         bcrypt.genSalt(10, (err, salt) => {
             if (err) {
-                console.log(err);
+                errorLogger.error(err);
                 return;
             }
             // Hash the password:
             bcrypt.hash(password, salt, (err, hashedPassword) => {
                 if (err) {
-                    console.log(err);
+                    errorLogger.error(err);
                     return;
                 }
                 User.update({
@@ -170,7 +194,7 @@ const userUpdate = async (req, res, next) => {
                     .then((result) => {
                         return res.status(201).json({ message: "User Updated sucessfully", result: result })
                     })
-                    .catch(err => console.log(err));
+                    .catch(err => errorLogger.error(err));
             });
         });
     }
@@ -184,6 +208,8 @@ const userUpdate = async (req, res, next) => {
 
 //Get Products:
 const getProducts = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
     const { idProduct, name, description, sku, manufacturer, quantity } = req.body
     await db.query("SELECT * FROM Product")
         .then((result) => {
@@ -195,13 +221,17 @@ const getProducts = async (req, res, next) => {
             }
         })
         .catch((error) => {
-            console.log(error)
+            errorLogger.error(error);
         });
 }
 //Get Products:
 
 //Add product function:
 const addProduct = (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
+    infoLogger.info("Adding a new product");
 
     const { name, description, sku, manufacturer, quantity } = req.body; //Extract data from body
 
@@ -217,7 +247,7 @@ const addProduct = (req, res, next) => {
                 res.status(201).json({ message: "Product added", result: result });
             })
             .catch((error) => {
-                console.log(error);
+                errorLogger.error(error);
             })
     }
 }
@@ -226,11 +256,15 @@ const addProduct = (req, res, next) => {
 //Update Product function:
 
 const updateProduct = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
     const { name, description, sku, manufacturer, quantity } = req.body;
     const { productId, userId } = req.params;
 
+    infoLogger.info("Updating the product");
+
     const [storedId] = await db.query(`SELECT idProduct, owner_user_id FROM Product WHERE idProduct = ${productId} AND owner_user_id = ${userId}`);
-    console.log(storedId);
+    // console.log(storedId);
 
     if (storedId.length == 0) {
         throw new Error("Invalid product or user");
@@ -244,7 +278,7 @@ const updateProduct = async (req, res, next) => {
                 res.status(201).json({ message: "Product Updated", result: result });
             })
             .catch((error) => {
-                console.log(error);
+                errorLogger.error(error);
             });
     }
 }
@@ -252,7 +286,10 @@ const updateProduct = async (req, res, next) => {
 
 //Delete Product function:
 const deleteProduct = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
     const { productId, userId } = req.params;
+    infoLogger.info(`Deleting the product ${productId}`);
     const [isProduct] = await db.query(`SELECT * FROM Product where idProduct = ${productId} AND owner_user_id = ${userId}`);
 
     if (!isProduct) {
@@ -264,7 +301,7 @@ const deleteProduct = async (req, res, next) => {
                 res.status(204).json({ message: "Product deleted", result: result });
             })
             .catch((error) => {
-                console.log(error);
+                errorLogger.error(error);
             });
     }
 }
@@ -274,10 +311,13 @@ const deleteProduct = async (req, res, next) => {
 
 //Test Create Product:
 const createProduct = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
     // const { userId } = req.params;
+    infoLogger.info("Creating a product");
     const { name, description, sku, maufacturer, quantity } = req.body;
     const USER_ID = req.USER_KI_ID;
-    console.log("USERKI ID FROM CREATE PRODUCT CONTROLLER:", USER_ID);
+    // console.log("USERKI ID FROM CREATE PRODUCT CONTROLLER:", USER_ID);
 
     try {
         if (!name || !description || !sku || !maufacturer || !quantity) {
@@ -306,7 +346,7 @@ const createProduct = async (req, res, next) => {
 
         return res.status(201).json({ message: "Product created", result: newProduct });
     } catch (error) {
-        console.error(error);
+        errorLogger.error(error);
         return res.status(400).json({ message: "Failed to create product" });
     }
 };
@@ -314,9 +354,12 @@ const createProduct = async (req, res, next) => {
 
 //Sequelize Update Product - PUT METHOD:
 const productUpdate = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+    infoLogger.info("Updating the product");
     const { name, description, sku, maufacturer, quantity } = req.body;
     const OWNER_ID = req.OWNERID;
-    console.log("OWNERID FROM USERCONTROLLER:", OWNER_ID);
+    // console.log("OWNERID FROM USERCONTROLLER:", OWNER_ID);
     const { prodId, userId } = req.params;
     if (!name || !description || !sku || !maufacturer || !quantity) {
         return res.status(400).send("Please fill all the fields to update a product.");
@@ -326,7 +369,7 @@ const productUpdate = async (req, res, next) => {
     try {
         product = await Product.findAll({ where: { productId: prodId, owner_user_id: OWNER_ID } });
     } catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
     if (!product) {
         return res.status(204).json({ message: "No product found to be updated" });
@@ -339,7 +382,7 @@ const productUpdate = async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
 
 
 
@@ -352,7 +395,7 @@ const productUpdate = async (req, res, next) => {
             })
         }
         catch (error) {
-            console.log(error);
+            errorLogger.error(error);
         }
 
         if (NEWSKU.productId !== exisitingProduct.productId) {
@@ -367,13 +410,13 @@ const productUpdate = async (req, res, next) => {
         try {
             await Product.update({ name, description, sku, maufacturer, quantity }, { where: { productId: prodId, owner_user_id: OWNER_ID } })
                 .then(result => {
-                    console.log(result);
+                    // console.log(result);
                     return res.status(201).json({ message: "Product Updated" });
                 })
-                .catch((err) => console.log(err));
+                .catch((err) => errorLogger.error(err));
         }
         catch (error) {
-            console.log(error);
+            errorLogger.error(error);
         }
     }
 }
@@ -382,10 +425,15 @@ const productUpdate = async (req, res, next) => {
 //Sequelize Update Product - PATCH METHOD:
 
 const productUpdatePatch = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
+    infoLogger.info('Updating the product');
+
     const { name, description, sku, maufacturer, quantity } = req.body;
     const { prodId } = req.params;
     const OWNERID = req.OWNERID;
-    console.log("USERID FROM PATCH UPDATE:", OWNERID)
+    // console.log("USERID FROM PATCH UPDATE:", OWNERID)
 
     let exisitingProduct;
 
@@ -397,7 +445,7 @@ const productUpdatePatch = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
 
@@ -411,7 +459,7 @@ const productUpdatePatch = async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     if (NEWSKU !== null && NEWSKU.productId !== exisitingProduct.productId) {
@@ -435,7 +483,7 @@ const productUpdatePatch = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     if (!PATCHUPDATE) {
@@ -451,10 +499,15 @@ const productUpdatePatch = async (req, res, next) => {
 
 //Delete Test:
 const productDelete = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
     const { prodId } = req.params;
+
+    infoLogger.info(`Deleting the product ${prodId}`);
+
     const OWNERID = req.OWNERID;
-    console.log("OWNERID FROM USERCONTROLLER FOR DELETE:", OWNERID);
-    console.log("Product id: ", prodId);
+    // console.log("OWNERID FROM USERCONTROLLER FOR DELETE:", OWNERID);
+    // console.log("Product id: ", prodId);
     let deleteProduct;
     try {
         deleteProduct = await Product.findOne({
@@ -464,7 +517,7 @@ const productDelete = async (req, res, next) => {
         })
     }
     catch (err) {
-        console.log(err);
+        errorLogger.error(err);
     }
     if (!deleteProduct) {
         res.status(401).send(`Product with id:${prodId} is not found`)
@@ -480,11 +533,11 @@ const productDelete = async (req, res, next) => {
                 res.status(204).send("Product deleted!")
             })
             .catch((err) => {
-                console.log(err);
+                errorLogger.error(err);
             })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 }
 //Delete Test:
@@ -493,14 +546,24 @@ const productDelete = async (req, res, next) => {
 //Get all product:
 
 const getAllProduct = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
+    infoLogger.info("Getting a single product");
+
     await Product.findAll().then((result) => {
         res.status(200).send(result)
-    }).catch(err => console.log(err))
+    }).catch(err =>  errorLogger.error(err))
 }
 //Get all product:
 
 //Get Single Product:
 const getSingleProduct = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
+    infoLogger.info("Getting a single product");
+
     const { prodId } = req.params;
     let singleProductFound;
     try {
@@ -511,7 +574,7 @@ const getSingleProduct = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
     if (!singleProductFound) {
         return res.status(400).json({ message: "No product found" });
@@ -530,17 +593,22 @@ const getSingleProduct = async (req, res, next) => {
 // Image Routes Start ***************************** Image Routes Start */
 
 const uploadDocument = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time', responseTime);
+
+
+
     const { productId } = req.params;
     const { fileName, s3_bucketPath } = req.body;
     const imageName = req.file;
     const mimeType = req.file.mimetype;
-    console.log("Image URL: ", imageName)
-    console.log("Content-type or the mimetype:", mimeType);
+    // console.log("Image URL: ", imageName)
+    // console.log("Content-type or the mimetype:", mimeType);
 
     const bucketName = process.env.S3_BUCKETNAME;
     const bucketRegion = process.env.S3_BUCKETREGION;
 
-
+    infoLogger.info(`Uploading ${imageName} to S3 Bucket`);
 
     //Assigning random name to the originalname by using randomName function:
     const randomName = randomImageName();
@@ -582,7 +650,7 @@ const uploadDocument = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     try {
@@ -594,20 +662,24 @@ const uploadDocument = async (req, res, next) => {
         }
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 }
 
 
 const getAllDocuments = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time',responseTime);
     // const { productId } = req.params
+
+    infoLogger.info("List of all the documents");
 
     let allDocument;
     try {
         allDocument = await Image.findAll();
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     if (!allDocument) {
@@ -619,6 +691,11 @@ const getAllDocuments = async (req, res, next) => {
 }
 
 const getSingleDocument = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time',responseTime);
+
+    infoLogger.info('Getting a single document');
+
     const { productId, imageId } = req.params;
     if (!productId && !imageId) {
         return res.status(400).json({ message: "Parameters not pased properly" });
@@ -635,7 +712,7 @@ const getSingleDocument = async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
     if (!singleDocument) {
@@ -648,11 +725,17 @@ const getSingleDocument = async (req, res, next) => {
 }
 
 const deleteDocument = async (req, res, next) => {
+    statsdClient.increment('my_counter');
+    statsdClient.timing('response_time',responseTime);
+
+
+    infoLogger.info('Started deleting images from S3 bucket');
+
     const { productId, imageId } = req.params;
 
     const bucketName = process.env.S3_BUCKETNAME;
     const bucketRegion = process.env.S3_BUCKETREGION;
-    
+
 
     const s3 = new S3Client({
         region: bucketRegion,
@@ -668,7 +751,7 @@ const deleteDocument = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
 
 
@@ -697,11 +780,8 @@ const deleteDocument = async (req, res, next) => {
         return res.status(204).json({ message: "Image deleted sucessfully!" });
     }
     catch (error) {
-        console.log(error);
+        errorLogger.error(error);
     }
-
-
-
 }
 
 // Image Routes End ***************************** Image Routes End */

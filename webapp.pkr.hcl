@@ -112,10 +112,10 @@ build {
     destination = "~/"
   }
 
-  provisioner "file" {
-    source      = "database.sh"
-    destination = "~/"
-  }
+  # provisioner "file" {
+  #   source      = "database.sh"
+  #   destination = "~/"
+  # }
 
 
   provisioner "shell" {
@@ -123,9 +123,11 @@ build {
       "pwd",
       "ls -a -l",
       "sudo bash ~/setup.sh",
-      "sudo bash ~/database.sh",
+      # "sudo bash ~/database.sh",
       "sudo bash ~/file.sh",
       "sudo bash ~/app.sh",
+      "sudo yum install amazon-cloudwatch-agent -y",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/home/ec2-user/webapp/config.json"
     ]
   }
 
