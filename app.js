@@ -15,6 +15,9 @@ const app = express();
 
 app.use(bodyParser.json());
 
+app.get('/health', (req, res, next) => {
+    res.send('Healthy Connection');
+});
 app.use(bodyParser.urlencoded({
     extended: false
 }));
