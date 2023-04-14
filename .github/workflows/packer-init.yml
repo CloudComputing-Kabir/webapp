@@ -81,6 +81,7 @@ jobs:
 
       - name: Refresh Instance in Auto Scaling Group
         run: aws --profile demo autoscaling start-instance-refresh --auto-scaling-group-name ${{ env.AUTOSCALING_GROUP_NAME }}
+
    
 
 
