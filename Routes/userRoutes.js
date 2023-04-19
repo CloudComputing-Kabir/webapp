@@ -38,25 +38,25 @@ router.get('/v1/getProducts', userController.getProducts);
 
 
 //Sequelize Product:
-router.post('/v1/product', protetion, userController.createProduct);
-router.put('/v1/product/:prodId', productProtection, userController.productUpdate);
-router.patch('/v1/product/:prodId', productProtection, userController.productUpdatePatch);
-router.delete('/v1/product/:prodId', productProtection, userController.productDelete);
-router.get('/v1/product/getAllProduct', userController.getAllProduct);
-router.get('/v1/product/:prodId', userController.getSingleProduct);
+router.post('/v2/product', protetion, userController.createProduct);
+router.put('/v2/product/:prodId', productProtection, userController.productUpdate);
+router.patch('/v2/product/:prodId', productProtection, userController.productUpdatePatch);
+router.delete('/v2/product/:prodId', productProtection, userController.productDelete);
+router.get('/v2/product/getAllProduct', userController.getAllProduct);
+router.get('/v2/product/:prodId', userController.getSingleProduct);
 //Sequelize:
 
 //Sequeslize User:
-router.post('/v1/user', userController.userCreate);
-router.put('/v1/user/:userId', userProtection, userController.userUpdate);
-router.get('/v1/user/:userId', userProtection, userController.userGetAccount);
+router.post('/v2/user', userController.userCreate);
+router.put('/v2/user/:userId', userProtection, userController.userUpdate);
+router.get('/v2/user/:userId', userProtection, userController.userGetAccount);
 //Sequeslize User:
 
 //Sequelize Image:
-router.post('/v1/product/:productId/image', documentProtection, multer({ storage: fileStorage, fileFilter: filteredFile }).single('s3_bucketPath'), userController.uploadDocument);
-router.get('/v1/product/:productId/image', documentProtection, userController.getAllDocuments);
-router.get('/v1/product/:productId/image/:imageId', documentProtection, userController.getSingleDocument);
-router.delete('/v1/product/:productId/image/:imageId', documentProtection, userController.deleteDocument);
+router.post('/v2/product/:productId/image', documentProtection, multer({ storage: fileStorage, fileFilter: filteredFile }).single('s3_bucketPath'), userController.uploadDocument);
+router.get('/v2/product/:productId/image', documentProtection, userController.getAllDocuments);
+router.get('/v2/product/:productId/image/:imageId', documentProtection, userController.getSingleDocument);
+router.delete('/v2/product/:productId/image/:imageId', documentProtection, userController.deleteDocument);
 //Sequelize Image:
 
 
