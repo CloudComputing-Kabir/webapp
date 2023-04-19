@@ -15,7 +15,7 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.get('/health', (req, res, next) => {
+app.get('/healthy', (req, res, next) => {
     res.send('Healthy Connection from Health checkpoint');
 });
 
